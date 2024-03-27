@@ -5,16 +5,28 @@ import gsap from "gsap";
 
 const scene = new THREE.Scene();
 
-//the sphere + the material
-const geometry = new THREE.SphereGeometry(3, 64, 64);
-const material = new THREE.MeshStandardMaterial({
-  color: "#00ff83",
-  roughness: 0.5,
+//the earth
+const geometry = new THREE.SphereGeometry(4, 64, 64);
+const material = new THREE.MeshPhongMaterial({
+  roughness: 1,
+  metalness: 0,
+  map: new THREE.TextureLoader().load("../texture/earthmap.jpg"),
+  bumpMap: new THREE.TextureLoader().load("../texture/earthbump.jpg"),
+  bumpScale: 0.2,
 });
 
-//the earth
 const mesh = new THREE.Mesh(geometry, material);
 scene.add(mesh);
+
+//the clouds
+const cloudGeometry = new THREE.SphereGeometry(4.3, 64, 64);
+const cloudMaterial = new THREE.MeshPhongMaterial({
+  map: new THREE.TextureLoader().load("../texture/earthCloud.png"),
+  transparent: true,
+});
+
+const cloudMesh = new THREE.Mesh(cloudGeometry, cloudMaterial);
+scene.add(cloudMesh);
 
 //the sizes
 const sizes = {
@@ -23,9 +35,8 @@ const sizes = {
 };
 
 //the light
-const light = new THREE.PointLight(0xffffff, 1, 100);
-light.position.set(0, 10, 10);
-light.intensity = 125;
+let light = new THREE.AmbientLight(0xffffff, 1, 100);
+light.position.set(1, 10, 10);
 scene.add(light);
 
 //the camera
@@ -57,10 +68,10 @@ window.addEventListener("resize", () => {
 
 const constrols = new OrbitControls(camera, canvas);
 constrols.enableDamping = true;
-constrols.enablePan = false; //disable
+constrols.enablePan = false;
 constrols.enableZoom = false; //disable zooming
 constrols.autoRotate = true; //enable autorotating
-constrols.autoRotateSpeed = 10; //autorotation speed
+constrols.autoRotateSpeed = 2; //autorotation speed
 
 const loop = () => {
   constrols.update(); //update the controls
@@ -70,29 +81,21 @@ const loop = () => {
 loop();
 
 const timeline = gsap.timeline({ defaults: { duration: 1 } });
-timeline.fromTo(mesh.scale, { z: 0, x: 0, y: 0 }, { z: 1, x: 1, y: 1 });
+timeline.fromTo(mesh.scale, { z: 0, x: 0, y: 0 }, { z: 1, x: -1, y: 1 });
 timeline.fromTo("nav", { y: "-100%" }, { y: "0%" });
 timeline.fromTo(".title", { opacity: 0 }, { opacity: 1 });
 
-let mouseDown = false;
-let rgb = [];
+let changedLight = false;
 
-window.addEventListener("mousedown", () => (mouseDown = true));
-window.addEventListener("mouseup", () => (mouseDown = false));
+document.getElementById("lightUp").addEventListener("click", function (e) {
+  if (!changedLight || light.intensity <= 0) {
+    changedLight = true;
+    light.intensity += 2;
+  }
+});
 
-window.addEventListener("mousemove", (e) => {
-  if (mouseDown) {
-    rgb = [
-      Math.round((e.pageX / sizes.width) * 255),
-      Math.round((e.pageY / sizes.height) * 255),
-      150,
-    ];
-
-    let newColor = new THREE.Color(`rgb(${rgb.join(",")})`);
-    gsap.to(mesh.material.color, {
-      r: newColor.r,
-      g: newColor.g,
-      b: newColor.b,
-    });
+document.getElementById("lightDown").addEventListener("click", function (e) {
+  if (light.intensity > 0) {
+    light.intensity -= 2;
   }
 });
